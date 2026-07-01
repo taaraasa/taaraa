@@ -72,7 +72,7 @@ export default function SongCard({
       )}
 
       <button onClick={handlePlay} className="text-left" aria-label={`Play ${song.title}`}>
-        <div className="relative aspect-square w-full">
+        <div className={`relative aspect-square w-full rounded-xl ${isActive && isPlaying ? "now-playing" : ""}`}>
           <Cover src={song.coverImage} seed={song.id} alt={song.title} className="absolute inset-0 h-full w-full shadow-lg" />
           <span
             className={`absolute bottom-2 right-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-starlight-glow to-starlight text-space-900 shadow-glow transition ${

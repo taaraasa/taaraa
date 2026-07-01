@@ -9,3 +9,7 @@ npm-debug.log*
 .env*.local
 /prisma/migrations/dev.db*
 next-env.d.ts
+
+# Personal local audio library — do not publish
+/public/audio/**
+!/public/audio/README.txt

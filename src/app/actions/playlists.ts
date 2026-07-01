@@ -75,3 +75,33 @@ export async function removeSongFromPlaylist(
   await prisma.playlistSong.deleteMany({ where: { playlistId, songId } });
   revalidatePath(`/playlist/${playlistId}`);
 }
+
+export async function updatePlaylist(
+  playlistId: string,
+  name: string,
+  description: string
+): Promise<{ ok: boolean }> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return { ok: false };
+
+  const playlist = await prisma.playlist.findUnique({
+    where: { id: playlistId },
+    select: { userId: true },
+  });
+  if (!playlist || playlist.userId !== userId) return { ok: false };
+
+  const cleanName = (name ?? "").trim();
+  const cleanDesc = (description ?? "").trim();
+
+  await prisma.playlist.update({
+    where: { id: playlistId },
+    data: {
+      ...(cleanName ? { name: cleanName } : {}),
+      description: cleanDesc || null,
+    },
+  });
+  revalidatePath(`/playlist/${playlistId}`);
+  revalidatePath("/library");
+  return { ok: true };
+}

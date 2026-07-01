@@ -60,9 +60,7 @@ body {
   box-shadow: 0 0 8px rgba(138, 180, 255, 0.8);
   transition: transform 0.15s ease;
 }
-.taaraa-range:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
-}
+.taaraa-range:hover::-webkit-slider-thumb { transform: scale(1.2); }
 .taaraa-range::-moz-range-thumb {
   width: 12px;
   height: 12px;
@@ -70,4 +68,64 @@ body {
   border-radius: 9999px;
   background: #aecbff;
   box-shadow: 0 0 8px rgba(138, 180, 255, 0.8);
+}
+
+/* Visible keyboard focus (accessibility floor) */
+:focus-visible {
+  outline: 2px solid #8ab4ff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---- Motion: only when the user hasn't asked to reduce it ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-rise {
+    animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .anim-fade {
+    animation: fade 0.4s ease both;
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Soft breathing glow for the currently-playing card */
+  .now-playing {
+    animation: nowGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes nowGlow {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(138,180,255,0.25), 0 0 18px rgba(138,180,255,0.20); }
+    50%      { box-shadow: 0 0 0 1px rgba(138,180,255,0.55), 0 0 30px rgba(138,180,255,0.40); }
+  }
+}
+
+/* Shimmer for loading skeletons (subtle even with reduced motion off) */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(138, 180, 255, 0.12),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
 }

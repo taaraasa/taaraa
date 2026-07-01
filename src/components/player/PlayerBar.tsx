@@ -88,7 +88,7 @@ export default function PlayerBar() {
   const volPct = (isMuted ? 0 : volume) * 100;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-space-800/95 backdrop-blur-xl">
+    <footer className="fixed bottom-16 left-0 right-0 z-40 border-t border-white/10 bg-space-800/95 backdrop-blur-xl md:bottom-0">
       <audio
         ref={audioRef}
         onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
