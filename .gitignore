@@ -10,7 +10,3 @@ npm-debug.log*
 /prisma/migrations/dev.db*
 next-env.d.ts
 
-
-/public/audio/
-
-/public/audio/
