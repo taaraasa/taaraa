@@ -2,10 +2,27 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Freely-usable demo tracks (SoundHelix) — stream directly in the browser.
-const AUDIO = (n) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${n}.mp3`;
+/* ============================================================
+   TAARAA CATALOG
+   ------------------------------------------------------------
+   To add a song, add one line to the SONGS array below.
 
-const categories = [
+   Each song is an object:
+   {
+     title:    "Song name",
+     artist:   "Artist name",          // reused across songs; created automatically
+     category: "pop",                  // must match a slug in CATEGORIES
+     url:      "/audio/my-song.mp3",   // file in public/audio  OR  a full https URL
+     duration: 210,                    // length in seconds (a rough number is fine)
+     album:    "Album name"            // optional; groups songs into an album
+   }
+
+   AUDIO URLS — two ways:
+   1. Local file:  put the .mp3 in  public/audio/  and use  "/audio/name.mp3"
+   2. External:    paste a full royalty-free URL, e.g. "https://.../track.mp3"
+   ============================================================ */
+
+const CATEGORIES = [
   { name: "Pop", slug: "pop", color: "#e0457b" },
   { name: "Lo-Fi", slug: "lofi", color: "#6a5acd" },
   { name: "Rock", slug: "rock", color: "#c0392b" },
@@ -13,37 +30,39 @@ const categories = [
   { name: "Indie", slug: "indie", color: "#d98a29" },
 ];
 
-const artists = [
-  { name: "Nova Sterling", bio: "Synth-pop from the outer rim.", verified: true },
-  { name: "The Meteor Kids", bio: "Loud, bright, unstoppable rock.", verified: true },
-  { name: "Luna Vale", bio: "Lo-fi beats to drift among the stars.", verified: false },
-  { name: "Circuit Halo", bio: "Electronic architect of sound.", verified: true },
-  { name: "Paper Comets", bio: "Indie dreamers with a telescope.", verified: false },
-];
+const HELIX = (n) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${n}.mp3`;
 
-// title, artistIndex, categorySlug, soundhelix number, duration(sec, nominal)
-const songs = [
-  ["Starlight Drive", 0, "pop", 1, 372],
-  ["Neon Orbit", 0, "pop", 2, 401],
-  ["Gravity of You", 0, "pop", 3, 348],
-  ["Thunder Halo", 1, "rock", 4, 289],
-  ["Crash the Comet", 1, "rock", 5, 315],
-  ["Redshift Riot", 1, "rock", 6, 366],
-  ["Midnight Static", 2, "lofi", 7, 254],
-  ["Cassette Moon", 2, "lofi", 8, 231],
-  ["Slow Nebula", 2, "lofi", 9, 278],
-  ["Pulse Reactor", 3, "electronic", 10, 333],
-  ["Data Bloom", 3, "electronic", 11, 358],
-  ["Quantum Tide", 3, "electronic", 12, 297],
-  ["Paper Satellites", 4, "indie", 13, 264],
-  ["Telescope Hearts", 4, "indie", 14, 302],
-  ["Analog Sky", 4, "indie", 15, 319],
+const SONGS = [
+  // --- The starter catalog (SoundHelix demo tracks) ---
+  { title: "Starlight Drive",   artist: "Nova Sterling",   category: "pop",        url: HELIX(1),  duration: 372, album: "Nova Sterling — Constellations" },
+  { title: "Neon Orbit",        artist: "Nova Sterling",   category: "pop",        url: HELIX(2),  duration: 401, album: "Nova Sterling — Constellations" },
+  { title: "Gravity of You",    artist: "Nova Sterling",   category: "pop",        url: HELIX(3),  duration: 348, album: "Nova Sterling — Constellations" },
+  { title: "Thunder Halo",      artist: "The Meteor Kids", category: "rock",       url: HELIX(4),  duration: 289, album: "The Meteor Kids — Constellations" },
+  { title: "Crash the Comet",   artist: "The Meteor Kids", category: "rock",       url: HELIX(5),  duration: 315, album: "The Meteor Kids — Constellations" },
+  { title: "Redshift Riot",     artist: "The Meteor Kids", category: "rock",       url: HELIX(6),  duration: 366, album: "The Meteor Kids — Constellations" },
+  { title: "Midnight Static",   artist: "Luna Vale",       category: "lofi",       url: HELIX(7),  duration: 254, album: "Luna Vale — Constellations" },
+  { title: "Cassette Moon",     artist: "Luna Vale",       category: "lofi",       url: HELIX(8),  duration: 231, album: "Luna Vale — Constellations" },
+  { title: "Slow Nebula",       artist: "Luna Vale",       category: "lofi",       url: HELIX(9),  duration: 278, album: "Luna Vale — Constellations" },
+  { title: "Pulse Reactor",     artist: "Circuit Halo",    category: "electronic", url: HELIX(10), duration: 333, album: "Circuit Halo — Constellations" },
+  { title: "Data Bloom",        artist: "Circuit Halo",    category: "electronic", url: HELIX(11), duration: 358, album: "Circuit Halo — Constellations" },
+  { title: "Quantum Tide",      artist: "Circuit Halo",    category: "electronic", url: HELIX(12), duration: 297, album: "Circuit Halo — Constellations" },
+  { title: "Paper Satellites",  artist: "Paper Comets",    category: "indie",      url: HELIX(13), duration: 264, album: "Paper Comets — Constellations" },
+  { title: "Telescope Hearts",  artist: "Paper Comets",    category: "indie",      url: HELIX(14), duration: 302, album: "Paper Comets — Constellations" },
+  { title: "Analog Sky",        artist: "Paper Comets",    category: "indie",      url: HELIX(15), duration: 319, album: "Paper Comets — Constellations" },
+
+  // ============================================================
+  // 👇 ADD YOUR OWN SONGS BELOW THIS LINE. Copy the pattern above.
+  // Example (uncomment and edit after putting the file in public/audio/):
+  //
+  // { title: "My Track",  artist: "My Artist",  category: "pop",  url: "/audio/my-track.mp3",  duration: 200,  album: "My Album" },
+  //
+  // ============================================================
 ];
 
 async function main() {
   console.log("Seeding TAARAA catalog…");
 
-  // Clean slate for repeatable seeds
+  // Clean slate so re-running gives a predictable catalog.
   await prisma.recentlyPlayed.deleteMany();
   await prisma.playlistSong.deleteMany();
   await prisma.likedSong.deleteMany();
@@ -52,49 +71,63 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.artist.deleteMany();
 
-  const catRecords = {};
-  for (const c of categories) {
-    const rec = await prisma.category.create({ data: c });
-    catRecords[c.slug] = rec;
+  // Categories
+  const catBySlug = {};
+  for (const c of CATEGORIES) {
+    catBySlug[c.slug] = await prisma.category.create({ data: c });
   }
 
-  const artistRecords = [];
-  for (const a of artists) {
-    const rec = await prisma.artist.create({ data: a });
-    artistRecords.push(rec);
+  // Artists (created on demand, de-duplicated by name)
+  const artistByName = {};
+  async function getArtist(name) {
+    if (!artistByName[name]) {
+      artistByName[name] = await prisma.artist.create({
+        data: { name, verified: true },
+      });
+    }
+    return artistByName[name];
   }
 
-  // One album per artist
-  const albumRecords = [];
-  for (const artist of artistRecords) {
-    const rec = await prisma.album.create({
-      data: {
-        title: `${artist.name} — Constellations`,
-        artistId: artist.id,
-        releaseDate: new Date(),
-      },
-    });
-    albumRecords.push(rec);
+  // Albums (created on demand, de-duplicated by title+artist)
+  const albumByKey = {};
+  async function getAlbum(title, artistId) {
+    if (!title) return null;
+    const key = `${title}::${artistId}`;
+    if (!albumByKey[key]) {
+      albumByKey[key] = await prisma.album.create({
+        data: { title, artistId, releaseDate: new Date() },
+      });
+    }
+    return albumByKey[key];
   }
 
-  let plays = 500;
-  for (const [title, artistIdx, catSlug, helixNum, duration] of songs) {
+  // Songs
+  let plays = SONGS.length * 25; // descending, so "Trending" has a clear order
+  for (const s of SONGS) {
+    const category = catBySlug[s.category];
+    if (!category) {
+      console.warn(`⚠ Skipping "${s.title}" — unknown category "${s.category}".`);
+      continue;
+    }
+    const artist = await getArtist(s.artist);
+    const album = await getAlbum(s.album, artist.id);
+
     await prisma.song.create({
       data: {
-        title,
-        duration,
-        audioUrl: AUDIO(helixNum),
-        plays: plays,
-        artistId: artistRecords[artistIdx].id,
-        albumId: albumRecords[artistIdx].id,
-        categories: { connect: [{ id: catRecords[catSlug].id }] },
+        title: s.title,
+        duration: s.duration,
+        audioUrl: s.url,
+        plays,
+        artistId: artist.id,
+        albumId: album ? album.id : null,
+        categories: { connect: [{ id: category.id }] },
       },
     });
-    plays -= 25; // descending so "Trending" has a clear order
+    plays -= 25;
   }
 
   const count = await prisma.song.count();
-  console.log(`Done. Seeded ${count} songs across ${categories.length} categories.`);
+  console.log(`✅ Done. Seeded ${count} songs across ${CATEGORIES.length} categories.`);
 }
 
 main()
