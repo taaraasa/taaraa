@@ -3,51 +3,62 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 /* ============================================================
-   TAARAA — Jamendo catalog seeder (with Hindi / Indian genre)
+   TAARAA — Jamendo catalog seeder
    ------------------------------------------------------------
-   Pulls real, legally-streamable Creative Commons tracks from
-   the Jamendo API, including independent Hindi/Indian artists.
+   Real, legally-streamable Creative Commons tracks from Jamendo.
+   The Hindi & Indian genre runs MULTIPLE tag searches and merges
+   them (deduplicated) to build a larger, more varied row.
 
-   USAGE:
-     node prisma/seed-jamendo.mjs
-   (reads JAMENDO_CLIENT_ID from your .env)
+   USAGE:  node prisma/seed-jamendo.mjs   (reads JAMENDO_CLIENT_ID from .env)
    ============================================================ */
 
 const CLIENT_ID = process.env.JAMENDO_CLIENT_ID;
-
 if (!CLIENT_ID) {
   console.error(
     "\n❌ Missing JAMENDO_CLIENT_ID.\n" +
       "   Get a free Client ID at https://devportal.jamendo.com\n" +
-      "   Add it to your .env:  JAMENDO_CLIENT_ID=\"your_id\"\n"
+      '   Add it to your .env:  JAMENDO_CLIENT_ID="your_id"\n'
   );
   process.exit(1);
 }
 
-// Each category maps to one or more Jamendo tags (fuzzytags accepts several).
-const CATEGORIES = [
-  { name: "Hindi & Indian", slug: "indian", color: "#ff7a1a", tag: "indian+bollywood+hindi" },
+// Standard genres: one tag each, 20 tracks.
+const GENRES = [
   { name: "Pop", slug: "pop", color: "#e0457b", tag: "pop" },
   { name: "Lo-Fi", slug: "lofi", color: "#6a5acd", tag: "lounge" },
   { name: "Rock", slug: "rock", color: "#c0392b", tag: "rock" },
   { name: "Electronic", slug: "electronic", color: "#1f9e8f", tag: "electronic" },
   { name: "Indie", slug: "indie", color: "#d98a29", tag: "indie" },
 ];
+const PER_GENRE = 20;
 
-const PER_CATEGORY = 20; // 20 x 6 = up to 120 tracks before de-duplication
+// Hindi & Indian: several tag groups, merged + deduplicated up to a target.
+const INDIAN = {
+  name: "Hindi & Indian",
+  slug: "indian",
+  color: "#ff7a1a",
+  target: 50,
+  tagGroups: [
+    "indian",
+    "bollywood",
+    "hindi",
+    "sitar+tabla",
+    "bhangra+punjabi",
+    "raga+bansuri",
+    "fusion+india",
+    "carnatic+classical",
+  ],
+};
 
-async function fetchTracks(tag) {
+async function fetchTracks(tag, limit) {
   const url =
     `https://api.jamendo.com/v3.0/tracks/?client_id=${CLIENT_ID}` +
-    `&format=json&limit=${PER_CATEGORY}` +
+    `&format=json&limit=${limit}` +
     `&fuzzytags=${encodeURIComponent(tag)}` +
     `&include=musicinfo&audioformat=mp32` +
     `&order=popularity_total`;
-
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Jamendo API error for "${tag}": ${res.status} ${res.statusText}`);
-  }
+  if (!res.ok) throw new Error(`Jamendo API error for "${tag}": ${res.status} ${res.statusText}`);
   const data = await res.json();
   if (data.headers && data.headers.status !== "success") {
     throw new Error(`Jamendo API said: ${data.headers.error_message || "unknown error"}`);
@@ -55,14 +66,38 @@ async function fetchTracks(tag) {
   return data.results || [];
 }
 
+// Gather unique Indian tracks across several tag searches.
+async function fetchIndian() {
+  const byId = new Map();
+  for (const tag of INDIAN.tagGroups) {
+    if (byId.size >= INDIAN.target) break;
+    const tracks = await fetchTracks(tag, 30);
+    for (const t of tracks) {
+      if (t.audio && !byId.has(t.id)) byId.set(t.id, t);
+      if (byId.size >= INDIAN.target) break;
+    }
+  }
+  return Array.from(byId.values());
+}
+
 async function main() {
   console.log("Fetching tracks from Jamendo…");
 
   const buckets = [];
-  for (const cat of CATEGORIES) {
-    const tracks = await fetchTracks(cat.tag);
-    console.log(`  ${cat.name}: ${tracks.length} tracks`);
-    buckets.push({ cat, tracks });
+
+  // Hindi & Indian (multi-tag)
+  const indianTracks = await fetchIndian();
+  console.log(`  ${INDIAN.name}: ${indianTracks.length} tracks`);
+  buckets.push({
+    cat: { name: INDIAN.name, slug: INDIAN.slug, color: INDIAN.color },
+    tracks: indianTracks,
+  });
+
+  // Standard genres
+  for (const g of GENRES) {
+    const tracks = await fetchTracks(g.tag, PER_GENRE);
+    console.log(`  ${g.name}: ${tracks.length} tracks`);
+    buckets.push({ cat: g, tracks });
   }
 
   console.log("\nClearing old catalog…");
@@ -75,9 +110,9 @@ async function main() {
   await prisma.artist.deleteMany();
 
   const catBySlug = {};
-  for (const c of CATEGORIES) {
-    catBySlug[c.slug] = await prisma.category.create({
-      data: { name: c.name, slug: c.slug, color: c.color },
+  for (const { cat } of buckets) {
+    catBySlug[cat.slug] = await prisma.category.create({
+      data: { name: cat.name, slug: cat.slug, color: cat.color },
     });
   }
 
@@ -138,9 +173,7 @@ async function main() {
   const count = await prisma.song.count();
   const artists = await prisma.artist.count();
   const albums = await prisma.album.count();
-  console.log(
-    `\n✅ Done. Seeded ${count} songs by ${artists} artists across ${albums} albums.`
-  );
+  console.log(`\n✅ Done. Seeded ${count} songs by ${artists} artists across ${albums} albums.`);
 }
 
 main()
