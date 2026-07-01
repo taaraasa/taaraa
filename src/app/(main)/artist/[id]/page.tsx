@@ -2,10 +2,10 @@ import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getArtist, getLikedSongIds, getUserPlaylistsLite } from "@/lib/data/library";
-import { coverGradient } from "@/lib/cover";
 import PageHeader from "@/components/music/PageHeader";
 import PlayAllButton from "@/components/music/PlayAllButton";
 import SongRow from "@/components/music/SongRow";
+import Cover from "@/components/music/Cover";
 
 export default async function ArtistPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -27,6 +27,7 @@ export default async function ArtistPage({ params }: { params: { id: string } })
         eyebrow={artist.verified ? "Verified Artist" : "Artist"}
         title={artist.name}
         seed={artist.id}
+        coverSrc={artist.image}
         round
         subtitle={artist.bio ?? `${artist.tracks.length} songs`}
       />
@@ -59,13 +60,8 @@ export default async function ArtistPage({ params }: { params: { id: string } })
                 href={`/album/${al.id}`}
                 className="w-40 rounded-2xl border border-white/5 bg-space-800/40 p-3 transition hover:bg-space-700/60"
               >
-                <div
-                  className="aspect-square w-full rounded-xl shadow-lg"
-                  style={{ background: coverGradient(al.id) }}
-                />
-                <p className="mt-2 truncate text-sm font-semibold text-white">
-                  {al.title}
-                </p>
+                <Cover src={al.coverImage} seed={al.id} alt={al.title} className="aspect-square w-full shadow-lg" />
+                <p className="mt-2 truncate text-sm font-semibold text-white">{al.title}</p>
               </Link>
             ))}
           </div>

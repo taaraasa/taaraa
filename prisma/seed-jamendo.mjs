@@ -3,17 +3,14 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 /* ============================================================
-   TAARAA — Jamendo catalog seeder
+   TAARAA — Jamendo catalog seeder (with Hindi / Indian genre)
    ------------------------------------------------------------
    Pulls real, legally-streamable Creative Commons tracks from
-   the Jamendo API and loads them into your database, complete
-   with artists, albums, cover art, and genre categories.
+   the Jamendo API, including independent Hindi/Indian artists.
 
    USAGE:
-     JAMENDO_CLIENT_ID=your_id_here node prisma/seed-jamendo.mjs
-
-   or add JAMENDO_CLIENT_ID to your .env and run:
      node prisma/seed-jamendo.mjs
+   (reads JAMENDO_CLIENT_ID from your .env)
    ============================================================ */
 
 const CLIENT_ID = process.env.JAMENDO_CLIENT_ID;
@@ -22,13 +19,14 @@ if (!CLIENT_ID) {
   console.error(
     "\n❌ Missing JAMENDO_CLIENT_ID.\n" +
       "   Get a free Client ID at https://devportal.jamendo.com\n" +
-      "   Then run:  JAMENDO_CLIENT_ID=your_id node prisma/seed-jamendo.mjs\n"
+      "   Add it to your .env:  JAMENDO_CLIENT_ID=\"your_id\"\n"
   );
   process.exit(1);
 }
 
-// Map TAARAA categories -> Jamendo "fuzzytags" (their genre tagging).
+// Each category maps to one or more Jamendo tags (fuzzytags accepts several).
 const CATEGORIES = [
+  { name: "Hindi & Indian", slug: "indian", color: "#ff7a1a", tag: "indian+bollywood+hindi" },
   { name: "Pop", slug: "pop", color: "#e0457b", tag: "pop" },
   { name: "Lo-Fi", slug: "lofi", color: "#6a5acd", tag: "lounge" },
   { name: "Rock", slug: "rock", color: "#c0392b", tag: "rock" },
@@ -36,7 +34,7 @@ const CATEGORIES = [
   { name: "Indie", slug: "indie", color: "#d98a29", tag: "indie" },
 ];
 
-const PER_CATEGORY = 24; // ~24 x 5 = 120 tracks before de-duplication
+const PER_CATEGORY = 20; // 20 x 6 = up to 120 tracks before de-duplication
 
 async function fetchTracks(tag) {
   const url =
@@ -60,7 +58,6 @@ async function fetchTracks(tag) {
 async function main() {
   console.log("Fetching tracks from Jamendo…");
 
-  // Pull each genre, tagging every track with which TAARAA category it belongs to.
   const buckets = [];
   for (const cat of CATEGORIES) {
     const tracks = await fetchTracks(cat.tag);
@@ -77,7 +74,6 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.artist.deleteMany();
 
-  // Categories
   const catBySlug = {};
   for (const c of CATEGORIES) {
     catBySlug[c.slug] = await prisma.category.create({
@@ -85,16 +81,15 @@ async function main() {
     });
   }
 
-  // De-dup caches
   const artistByName = {};
   const albumByKey = {};
   const seenTrackIds = new Set();
 
   async function getArtist(name, image) {
-    const key = name.toLowerCase();
+    const key = (name || "Unknown Artist").toLowerCase();
     if (!artistByName[key]) {
       artistByName[key] = await prisma.artist.create({
-        data: { name, image: image || null, verified: true },
+        data: { name: name || "Unknown Artist", image: image || null, verified: true },
       });
     }
     return artistByName[key];
@@ -105,12 +100,7 @@ async function main() {
     const key = `${title.toLowerCase()}::${artistId}`;
     if (!albumByKey[key]) {
       albumByKey[key] = await prisma.album.create({
-        data: {
-          title,
-          coverImage: cover || null,
-          artistId,
-          releaseDate: new Date(),
-        },
+        data: { title, coverImage: cover || null, artistId, releaseDate: new Date() },
       });
     }
     return albumByKey[key];
@@ -121,20 +111,19 @@ async function main() {
 
   for (const { cat, tracks } of buckets) {
     for (const t of tracks) {
-      // Skip anything missing a streamable file, and skip duplicates
-      // (the same track can appear under multiple genres).
       if (!t.audio || seenTrackIds.has(t.id)) continue;
       seenTrackIds.add(t.id);
 
       const artist = await getArtist(t.artist_name, t.artist_image);
-      const album = await getAlbum(t.album_name, t.album_image || t.image, artist.id);
+      const cover = t.album_image || t.image || null;
+      const album = await getAlbum(t.album_name, cover, artist.id);
 
       await prisma.song.create({
         data: {
           title: t.name,
           duration: Math.round(Number(t.duration) || 180),
-          audioUrl: t.audio, // direct, legal MP3 stream URL from Jamendo
-          coverImage: t.album_image || t.image || null,
+          audioUrl: t.audio,
+          coverImage: cover,
           plays,
           artistId: artist.id,
           albumId: album ? album.id : null,

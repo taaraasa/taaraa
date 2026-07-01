@@ -23,6 +23,7 @@ export default async function SongPage({ params }: { params: { id: string } }) {
         eyebrow="Song"
         title={song.title}
         seed={song.id}
+        coverSrc={song.coverImage}
         subtitle={
           <span>
             {song.artistId ? (

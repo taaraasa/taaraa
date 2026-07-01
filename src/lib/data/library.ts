@@ -6,6 +6,7 @@ type SongFull = {
   title: string;
   audioUrl: string;
   duration: number;
+  coverImage: string | null;
   artist: { id: string; name: string };
   album: { id: string; title: string } | null;
 };
@@ -15,6 +16,7 @@ const songSelectFull = {
   title: true,
   audioUrl: true,
   duration: true,
+  coverImage: true,
   artist: { select: { id: true, name: true } },
   album: { select: { id: true, title: true } },
 } as const;
@@ -25,6 +27,7 @@ function toTrack(s: SongFull): TrackListItem {
     title: s.title,
     audioUrl: s.audioUrl,
     duration: s.duration,
+    coverImage: s.coverImage,
     artistName: s.artist.name,
     artistId: s.artist.id,
     albumId: s.album?.id ?? null,
@@ -35,6 +38,7 @@ function toTrack(s: SongFull): TrackListItem {
 export type AlbumDetail = {
   id: string;
   title: string;
+  coverImage: string | null;
   releaseDate: Date | null;
   artist: { id: string; name: string };
   tracks: TrackListItem[];
@@ -46,6 +50,7 @@ export async function getAlbum(id: string): Promise<AlbumDetail | null> {
     select: {
       id: true,
       title: true,
+      coverImage: true,
       releaseDate: true,
       artist: { select: { id: true, name: true } },
       songs: { orderBy: { createdAt: "asc" }, select: songSelectFull },
@@ -55,6 +60,7 @@ export async function getAlbum(id: string): Promise<AlbumDetail | null> {
   return {
     id: album.id,
     title: album.title,
+    coverImage: album.coverImage,
     releaseDate: album.releaseDate,
     artist: album.artist,
     tracks: album.songs.map(toTrack),
@@ -65,9 +71,10 @@ export type ArtistDetail = {
   id: string;
   name: string;
   bio: string | null;
+  image: string | null;
   verified: boolean;
   tracks: TrackListItem[];
-  albums: { id: string; title: string }[];
+  albums: { id: string; title: string; coverImage: string | null }[];
 };
 
 export async function getArtist(id: string): Promise<ArtistDetail | null> {
@@ -77,9 +84,13 @@ export async function getArtist(id: string): Promise<ArtistDetail | null> {
       id: true,
       name: true,
       bio: true,
+      image: true,
       verified: true,
       songs: { orderBy: { plays: "desc" }, select: songSelectFull },
-      albums: { select: { id: true, title: true }, orderBy: { createdAt: "desc" } },
+      albums: {
+        select: { id: true, title: true, coverImage: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
   if (!artist) return null;
@@ -87,6 +98,7 @@ export async function getArtist(id: string): Promise<ArtistDetail | null> {
     id: artist.id,
     name: artist.name,
     bio: artist.bio,
+    image: artist.image,
     verified: artist.verified,
     tracks: artist.songs.map(toTrack),
     albums: artist.albums,

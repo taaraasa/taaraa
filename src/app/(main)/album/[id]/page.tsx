@@ -24,6 +24,7 @@ export default async function AlbumPage({ params }: { params: { id: string } }) 
         eyebrow="Album"
         title={album.title}
         seed={album.id}
+        coverSrc={album.coverImage}
         subtitle={
           <span>
             <Link href={`/artist/${album.artist.id}`} className="font-semibold text-white hover:underline">

@@ -5,6 +5,7 @@ export type PlayerSong = {
   artistName: string;
   audioUrl: string;
   duration: number;
+  coverImage?: string | null;
 };
 
 // Row-friendly track: everything the player needs, plus optional links.

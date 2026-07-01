@@ -6,6 +6,7 @@ type SongFull = {
   title: string;
   audioUrl: string;
   duration: number;
+  coverImage: string | null;
   artist: { id: string; name: string };
   album: { id: string; title: string } | null;
 };
@@ -16,6 +17,7 @@ function toTrack(s: SongFull): TrackListItem {
     title: s.title,
     audioUrl: s.audioUrl,
     duration: s.duration,
+    coverImage: s.coverImage,
     artistName: s.artist.name,
     artistId: s.artist.id,
     albumId: s.album?.id ?? null,
@@ -28,6 +30,7 @@ const songSelect = {
   title: true,
   audioUrl: true,
   duration: true,
+  coverImage: true,
   artist: { select: { id: true, name: true } },
   album: { select: { id: true, title: true } },
 } as const;
@@ -58,7 +61,7 @@ export async function getCategoriesWithSongs(): Promise<ShelfCategory[]> {
       name: true,
       slug: true,
       color: true,
-      songs: { take: 8, select: songSelect },
+      songs: { take: 10, select: songSelect },
     },
   });
   return categories.map(

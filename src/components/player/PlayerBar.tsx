@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePlayer } from "@/store/player";
-import { coverGradient, formatTime } from "@/lib/cover";
+import { formatTime } from "@/lib/cover";
+import Cover from "@/components/music/Cover";
 import LikeButton from "@/components/music/LikeButton";
 
 export default function PlayerBar() {
@@ -100,9 +101,12 @@ export default function PlayerBar() {
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {currentSong ? (
             <>
-              <div
-                className="h-14 w-14 shrink-0 rounded-lg shadow-glow"
-                style={{ background: coverGradient(currentSong.id) }}
+              <Cover
+                src={currentSong.coverImage}
+                seed={currentSong.id}
+                alt={currentSong.title}
+                className="h-14 w-14 shrink-0 shadow-glow"
+                rounded="rounded-lg"
               />
               <div className="min-w-0">
                 <Link

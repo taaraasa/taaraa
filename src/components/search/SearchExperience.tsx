@@ -3,8 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { searchAll } from "@/app/actions/search";
-import { coverGradient } from "@/lib/cover";
 import SongRow from "@/components/music/SongRow";
+import Cover from "@/components/music/Cover";
 import type { SearchResults } from "@/lib/data/search";
 import type { PlaylistLite } from "@/types/music";
 
@@ -87,10 +87,7 @@ export default function SearchExperience({
                 href={`/artist/${a.id}`}
                 className="w-36 rounded-2xl border border-white/5 bg-space-800/40 p-4 text-center transition hover:bg-space-700/60"
               >
-                <div
-                  className="mx-auto aspect-square w-full rounded-full shadow-lg"
-                  style={{ background: coverGradient(a.id) }}
-                />
+                <Cover src={a.image} seed={a.id} alt={a.name} className="mx-auto aspect-square w-full shadow-lg" rounded="rounded-full" />
                 <p className="mt-3 truncate text-sm font-semibold text-white">
                   {a.name}
                 </p>
@@ -114,10 +111,7 @@ export default function SearchExperience({
                 href={`/album/${al.id}`}
                 className="w-40 rounded-2xl border border-white/5 bg-space-800/40 p-3 transition hover:bg-space-700/60"
               >
-                <div
-                  className="aspect-square w-full rounded-xl shadow-lg"
-                  style={{ background: coverGradient(al.id) }}
-                />
+                <Cover src={al.coverImage} seed={al.id} alt={al.title} className="aspect-square w-full shadow-lg" />
                 <p className="mt-2 truncate text-sm font-semibold text-white">
                   {al.title}
                 </p>
