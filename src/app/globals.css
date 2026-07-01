@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #06060d;
+  --foreground: #e7ecff;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100%;
+}
+
+.starfield::before,
+.starfield::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 70% 60%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, rgba(174, 203, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 85% 22%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 12% 70%, rgba(255, 216, 119, 0.6), transparent);
+  background-repeat: repeat;
+  background-size: 600px 600px;
+  opacity: 0.55;
+}
+.starfield::after {
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.3; }
+  to { opacity: 0.7; }
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #1c2e6b; border-radius: 8px; }
+
+/* Custom range sliders (progress + volume) */
+.taaraa-range {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  outline: none;
+}
+.taaraa-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #aecbff;
+  box-shadow: 0 0 8px rgba(138, 180, 255, 0.8);
+  transition: transform 0.15s ease;
+}
+.taaraa-range:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+.taaraa-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: #aecbff;
+  box-shadow: 0 0 8px rgba(138, 180, 255, 0.8);
+}

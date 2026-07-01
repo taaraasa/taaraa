@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  name           String?
+  passwordHash   String
+  image          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  playlists      Playlist[]
+  likedSongs     LikedSong[]
+  recentlyPlayed RecentlyPlayed[]
+
+  @@map("users")
+}
+
+model Artist {
+  id        String   @id @default(cuid())
+  name      String
+  bio       String?
+  image     String?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  albums    Album[]
+  songs     Song[]
+
+  @@map("artists")
+}
+
+model Album {
+  id          String    @id @default(cuid())
+  title       String
+  coverImage  String?
+  releaseDate DateTime?
+  artistId    String
+  createdAt   DateTime  @default(now())
+
+  artist      Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  songs       Song[]
+
+  @@index([artistId])
+  @@map("albums")
+}
+
+model Song {
+  id             String           @id @default(cuid())
+  title          String
+  duration       Int
+  audioUrl       String
+  coverImage     String?
+  plays          Int              @default(0)
+  artistId       String
+  albumId        String?
+  createdAt      DateTime         @default(now())
+
+  artist         Artist           @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album          Album?           @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  categories     Category[]       @relation("CategorySongs")
+  likedBy        LikedSong[]
+  playlistSongs  PlaylistSong[]
+  recentlyPlayed RecentlyPlayed[]
+
+  @@index([artistId])
+  @@index([albumId])
+  @@map("songs")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  color     String?
+  image     String?
+  createdAt DateTime   @default(now())
+
+  songs     Song[]     @relation("CategorySongs")
+  playlists Playlist[] @relation("CategoryPlaylists")
+
+  @@map("categories")
+}
+
+model Playlist {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  isPublic    Boolean        @default(true)
+  userId      String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songs       PlaylistSong[]
+  categories  Category[]     @relation("CategoryPlaylists")
+
+  @@index([userId])
+  @@map("playlists")
+}
+
+model PlaylistSong {
+  playlistId String
+  songId     String
+  order      Int      @default(0)
+  addedAt    DateTime @default(now())
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, songId])
+  @@index([songId])
+  @@map("playlist_songs")
+}
+
+model LikedSong {
+  userId  String
+  songId  String
+  likedAt DateTime @default(now())
+
+  user    User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song    Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@id([userId, songId])
+  @@index([songId])
+  @@map("liked_songs")
+}
+
+model RecentlyPlayed {
+  id       String   @id @default(cuid())
+  userId   String
+  songId   String
+  playedAt DateTime @default(now())
+
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song     Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+  @@map("recently_played")
+}
